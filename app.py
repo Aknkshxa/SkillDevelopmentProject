@@ -5,6 +5,7 @@ import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import PatternFill
 from openpyxl.utils import get_column_letter
+from openpyxl.chart import BarChart, Reference
 from PIL import Image
 import pytesseract
 import tabula
@@ -120,10 +121,25 @@ def process_file():
         except ValueError:
             pass
 
-    output_file = "output_highlighted.xlsx"
+    # Bar Chart Creation
+    # Assuming the attendance values are in the column `subject_column` and starting from `header_row+1`
+    chart = BarChart()
+    chart.title = f"Attendance Bar Chart - {subject_name.capitalize()}"
+    chart.x_axis.title = "Students"
+    chart.y_axis.title = "Attendance (%)"
+
+    data = Reference(ws, min_col=subject_column, min_row=header_row, max_row=ws.max_row)
+    categories = Reference(ws, min_col=student_name_column, min_row=header_row + 1, max_row=ws.max_row)
+    chart.add_data(data, titles_from_data=True)
+    chart.set_categories(categories)
+
+    chart_location = f"{get_column_letter(subject_column + 3)}{header_row + 5}"
+    ws.add_chart(chart, chart_location)
+
+    output_file = "output_highlighted_with_chart.xlsx"
     wb.save(output_file)
 
-    return jsonify({'message': f'Highlighting completed. Check {output_file}'}), 200
+    return jsonify({'message': f'Highlighting and chart creation completed. Check {output_file}'}), 200
 
 if __name__ == '__main__':
     app.run(debug=True)
